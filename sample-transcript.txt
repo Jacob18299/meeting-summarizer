@@ -1,0 +1,14 @@
+Alex: Okay, thanks everyone for joining. Main thing today is the Q3 product launch.
+Sarah: Right. So the big question is the date. Engineering says the build won't be stable until early August.
+Jordan: I'd agree. I don't think we can hit the original July 20th date safely.
+Alex: Okay. So let's move the launch to August 15th. Everyone good with that?
+Sarah: Works for me.
+Jordan: Yep.
+Alex: Great, August 15th it is. Sarah, can you update the marketing timeline to match?
+Sarah: Sure, I'll have the revised marketing copy ready by end of next week.
+Alex: Perfect. Jordan, we'll need the staging server set up before QA starts - can you own that?
+Jordan: Yeah, I'll get staging up by the 25th.
+Alex: One more thing - the budget. Marketing is asking for a 10% increase for the launch push.
+Sarah: I think it's justified given the delay, we need more runway.
+Alex: Agreed. Let's approve the 10% budget increase. I'll square it with finance.
+Alex: Okay, I think that's everything. Thanks all.

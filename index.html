@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Meeting Summarizer</title>
+<style>
+  :root {
+    --ink: #1a2238; --ink-soft: #252e4a; --paper: #f7f5ef;
+    --paper-edge: #e4e0d4; --text: #20242e; --muted: #6b7180;
+    --amber: #d98a3d; --amber-deep: #b86f29; --good: #2f7d5b;
+    --radius: 10px; --maxw: 880px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Georgia', 'Times New Roman', serif;
+    background: var(--ink); color: var(--paper); line-height: 1.6;
+    min-height: 100vh; padding: 48px 20px;
+  }
+  .wrap { max-width: var(--maxw); margin: 0 auto; }
+  header { margin-bottom: 36px; }
+  .eyebrow {
+    font-family: 'Helvetica Neue', Arial, sans-serif; font-size: 12px;
+    letter-spacing: 0.18em; text-transform: uppercase; color: var(--amber); margin-bottom: 10px;
+  }
+  h1 { font-size: 38px; font-weight: 400; letter-spacing: -0.01em; line-height: 1.15; }
+  .sub {
+    font-family: 'Helvetica Neue', Arial, sans-serif; color: #aab0c0;
+    font-size: 15px; margin-top: 12px; max-width: 56ch;
+  }
+  .panel {
+    background: var(--paper); color: var(--text); border-radius: var(--radius);
+    padding: 26px; margin-bottom: 24px;
+  }
+  label {
+    font-family: 'Helvetica Neue', Arial, sans-serif; font-size: 13px; font-weight: 600;
+    letter-spacing: 0.02em; color: var(--muted); display: block; margin-bottom: 10px;
+  }
+  textarea {
+    width: 100%; min-height: 220px; resize: vertical; border: 1px solid var(--paper-edge);
+    border-radius: 8px; padding: 14px 16px; font-family: 'SF Mono', 'Menlo', monospace;
+    font-size: 14px; line-height: 1.6; color: var(--text); background: #fff;
+  }
+  textarea:focus { outline: 2px solid var(--amber); outline-offset: 1px; border-color: transparent; }
+  .row { display: flex; align-items: center; justify-content: space-between; margin-top: 16px; gap: 16px; }
+  .hint { font-family: 'Helvetica Neue', Arial, sans-serif; font-size: 13px; color: var(--muted); }
+  button {
+    font-family: 'Helvetica Neue', Arial, sans-serif; font-size: 15px; font-weight: 600;
+    color: #fff; background: var(--amber); border: none; border-radius: 8px;
+    padding: 12px 24px; cursor: pointer; transition: background 0.15s ease;
+  }
+  button:hover:not(:disabled) { background: var(--amber-deep); }
+  button:disabled { opacity: 0.55; cursor: not-allowed; }
+  #results { display: none; }
+  .result-card {
+    background: var(--ink-soft); border: 1px solid #313a59; border-radius: var(--radius);
+    padding: 24px 26px; margin-bottom: 18px;
+  }
+  .result-card h2 {
+    font-family: 'Helvetica Neue', Arial, sans-serif; font-size: 13px; font-weight: 700;
+    letter-spacing: 0.12em; text-transform: uppercase; color: var(--amber); margin-bottom: 14px;
+  }
+  .overview-text { font-size: 17px; line-height: 1.7; }
+  ul { list-style: none; }
+  li { padding: 10px 0 10px 22px; position: relative; border-bottom: 1px solid #2c3553; font-size: 15px; }
+  li:last-child { border-bottom: none; }
+  li::before {
+    content: ""; position: absolute; left: 0; top: 19px; width: 7px; height: 7px;
+    background: var(--amber); border-radius: 2px;
+  }
+  .owner {
+    font-family: 'Helvetica Neue', Arial, sans-serif; font-size: 12px; color: var(--ink);
+    background: #cdd3e0; padding: 2px 9px; border-radius: 20px; margin-left: 8px; white-space: nowrap;
+  }
+  .empty-note { color: var(--muted); font-family: 'Helvetica Neue', Arial, sans-serif; font-size: 14px; font-style: italic; }
+  #status { font-family: 'Helvetica Neue', Arial, sans-serif; font-size: 14px; margin-bottom: 18px; display: none; }
+  #status.show { display: block; }
+  #status.working { color: #aab0c0; }
+  #status.error { color: #f0a0a0; background: #3a2030; border: 1px solid #5a3040; padding: 12px 16px; border-radius: 8px; }
+  @media (prefers-reduced-motion: no-preference) {
+    .result-card { animation: rise 0.3s ease both; }
+    @keyframes rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+  }
+  @media (max-width: 560px) {
+    h1 { font-size: 30px; }
+    .row { flex-direction: column; align-items: stretch; }
+    button { width: 100%; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Local &middot; Private &middot; Offline</div>
+    <h1>Meeting Summarizer</h1>
+    <p class="sub">Paste a transcript and get a clean overview, the decisions that were made, and who owns each action item. Runs entirely on your own machine.</p>
+  </header>
+  <div class="panel">
+    <label for="transcript">Meeting transcript</label>
+    <textarea id="transcript" placeholder="Paste your meeting transcript here..."></textarea>
+    <div class="row">
+      <span class="hint">Nothing leaves your computer &mdash; processed locally by your own model.</span>
+      <button id="go">Summarize meeting</button>
+    </div>
+  </div>
+  <div id="status"></div>
+  <div id="results">
+    <div class="result-card"><h2>Overview</h2><p class="overview-text" id="overview"></p></div>
+    <div class="result-card"><h2>Key decisions</h2><ul id="decisions"></ul></div>
+    <div class="result-card"><h2>Action items</h2><ul id="actions"></ul></div>
+  </div>
+</div>
+<script>
+  const btn = document.getElementById('go');
+  const status = document.getElementById('status');
+  const results = document.getElementById('results');
+  btn.addEventListener('click', summarize);
+  async function summarize() {
+    const transcript = document.getElementById('transcript').value.trim();
+    if (!transcript) { showError('Please paste a meeting transcript first.'); return; }
+    btn.disabled = true;
+    results.style.display = 'none';
+    showStatus('Summarizing&hellip; this can take a moment on a local model.', 'working');
+    try {
+      const resp = await fetch('/api/summarize', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ transcript })
+      });
+      const data = await resp.json();
+      if (!resp.ok) { showError(data.error || 'Something went wrong.'); return; }
+      render(data);
+    } catch (err) {
+      showError('Could not reach the server. Is it running?');
+    } finally {
+      btn.disabled = false;
+    }
+  }
+  function render(data) {
+    status.className = '';
+    document.getElementById('overview').textContent = data.overview || 'No overview produced.';
+    const decisions = document.getElementById('decisions');
+    decisions.innerHTML = '';
+    if (data.decisions && data.decisions.length) {
+      data.decisions.forEach(d => { const li = document.createElement('li'); li.textContent = d; decisions.appendChild(li); });
+    } else { decisions.innerHTML = '<li class="empty-note">No decisions recorded.</li>'; }
+    const actions = document.getElementById('actions');
+    actions.innerHTML = '';
+    if (data.action_items && data.action_items.length) {
+      data.action_items.forEach(a => {
+        const li = document.createElement('li');
+        li.textContent = a.task || String(a);
+        if (a.owner) { const span = document.createElement('span'); span.className = 'owner'; span.textContent = a.owner; li.appendChild(span); }
+        actions.appendChild(li);
+      });
+    } else { actions.innerHTML = '<li class="empty-note">No action items found.</li>'; }
+    results.style.display = 'block';
+  }
+  function showStatus(html, kind) { status.innerHTML = html; status.className = 'show ' + kind; }
+  function showError(msg) { showStatus(msg, 'error'); }
+</script>
+</body>
+</html>
